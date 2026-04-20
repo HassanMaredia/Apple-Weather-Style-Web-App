@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Weather — Apple-Inspired Dashboard | Live Map</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        background: radial-gradient(
+          ellipse at 20% 30%,
+          #ffe8c7 0%,
+          #c0e0ff 45%,
+          #7ab9e7 100%
+        );
+        font-family:
+          -apple-system, "SF Pro Text", "SF Pro Display", "Helvetica Neue",
+          "BlinkMacSystemFont", "Segoe UI", Roboto, sans-serif;
+        padding: 2rem 1.5rem;
+        position: relative;
+        backdrop-filter: blur(1px);
+      }
+
+      .sun-glow {
+        position: fixed;
+        top: -80px;
+        left: -80px;
+        width: 320px;
+        height: 320px;
+        background: radial-gradient(
+          circle,
+          rgba(255, 245, 200, 0.85) 0%,
+          rgba(255, 225, 140, 0.5) 40%,
+          rgba(255, 210, 100, 0) 70%
+        );
+        border-radius: 50%;
+        filter: blur(32px);
+        pointer-events: none;
+        z-index: 0;
+      }
+      .lens-flare {
+        position: fixed;
+        top: 40px;
+        left: 60px;
+        width: 140px;
+        height: 140px;
+        background: radial-gradient(
+          circle,
+          rgba(255, 255, 245, 0.7) 0%,
+          rgba(255, 245, 200, 0.2) 60%,
+          transparent 90%
+        );
+        border-radius: 50%;
+        filter: blur(18px);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .dashboard {
+        max-width: 1400px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 2;
+      }
+
+      .mac-window {
+        background: rgba(255, 255, 255, 0.28);
+        backdrop-filter: blur(30px);
+        border-radius: 40px;
+        box-shadow:
+          0 25px 50px -12px rgba(0, 0, 0, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        padding: 2rem 2rem 2.2rem;
+        transition: all 0.2s ease;
+      }
+
+      .window-buttons {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+      }
+      .win-btn {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        transition: 0.1s ease;
+      }
+      .red {
+        background: #ff5f56;
+      }
+      .yellow {
+        background: #ffbd2e;
+      }
+      .green {
+        background: #27c93f;
+      }
+
+      .search-container {
+        margin-left: auto;
+        display: flex;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(10px);
+        padding: 0.3rem 0.3rem 0.3rem 1rem;
+        border-radius: 50px;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+      }
+      .search-input {
+        background: transparent;
+        border: none;
+        padding: 0.5rem 0;
+        font-size: 0.9rem;
+        font-family: inherit;
+        width: 200px;
+        outline: none;
+        color: #1e293b;
+      }
+      .search-input::placeholder {
+        color: rgba(30, 41, 59, 0.6);
+      }
+      .search-btn {
+        background: rgba(30, 41, 59, 0.8);
+        border: none;
+        border-radius: 40px;
+        padding: 0.5rem 1.2rem;
+        color: white;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+      .search-btn:hover {
+        background: #1e293b;
+        transform: scale(0.97);
+      }
+      .location-status {
+        font-size: 0.75rem;
+        margin-left: 1rem;
+        color: #2c3e4f;
+        background: rgba(255, 255, 245, 0.5);
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+      }
+
+      .location-label {
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+        color: rgba(30, 30, 40, 0.75);
+        text-transform: uppercase;
+        margin-bottom: 0.3rem;
+      }
+      .city-name {
+        font-size: 2.8rem;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #1f2a3a, #0b1a2e);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 2px 5px rgba(255, 255, 200, 0.3);
+      }
+      .temp-large {
+        font-size: 5.8rem;
+        font-weight: 700;
+        letter-spacing: -2px;
+        color: #1e293b;
+        line-height: 1;
+      }
+      .condition-text {
+        font-size: 1.3rem;
+        font-weight: 500;
+        color: #2c3e4e;
+      }
+      .hi-low {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #2c3e4ecc;
+        margin-top: 0.2rem;
+      }
+
+      .glass-card {
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(20px);
+        border-radius: 36px;
+        padding: 1.2rem 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s ease;
+      }
+      .glass-card:hover {
+        background: rgba(255, 255, 255, 0.55);
+        transform: translateY(-3px);
+      }
+      .card-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #2c3e4f;
+        margin-bottom: 1rem;
+        opacity: 0.75;
+      }
+
+      .hourly-scroll {
+        display: flex;
+        gap: 1.2rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        scrollbar-width: thin;
+      }
+      .hourly-item {
+        flex: 0 0 auto;
+        text-align: center;
+        min-width: 70px;
+        font-weight: 500;
+      }
+      .hourly-time {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #1f2a3e;
+      }
+      .hourly-icon {
+        font-size: 2rem;
+        margin: 0.5rem 0;
+      }
+      .hourly-temp {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.6rem;
+        margin-top: 2rem;
+      }
+
+      /* Map container styling */
+      .map-container {
+        width: 100%;
+        height: 280px;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .map-container iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+      .map-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 280px;
+        background: rgba(255, 255, 245, 0.3);
+        border-radius: 24px;
+        font-weight: 500;
+        color: #2c3e4f;
+      }
+
+      .forecast-10day {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+      }
+      .day-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        padding: 0.6rem 0;
+      }
+      .day-name {
+        font-weight: 500;
+        width: 100px;
+      }
+      .day-icon {
+        font-size: 1.6rem;
+        width: 48px;
+        text-align: center;
+      }
+      .day-temps {
+        font-weight: 500;
+        display: flex;
+        gap: 0.8rem;
+      }
+      .wind-gauge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .gauge-circle {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.6rem;
+        color: #1e2f3e;
+        background-color: rgba(255, 255, 240, 0.5);
+        backdrop-filter: blur(4px);
+        box-shadow:
+          inset 0 0 0 2px white,
+          0 6px 12px rgba(0, 0, 0, 0.1);
+      }
+      .wind-details {
+        font-weight: 500;
+      }
+
+      .aqi-value {
+        font-size: 2.4rem;
+        font-weight: 700;
+      }
+      .loading,
+      .error-msg {
+        text-align: center;
+        padding: 2rem;
+        font-weight: 500;
+        background: rgba(255, 255, 245, 0.6);
+        border-radius: 2rem;
+        backdrop-filter: blur(12px);
+      }
+
+      @media (max-width: 850px) {
+        body {
+          padding: 1rem;
+        }
+        .mac-window {
+          padding: 1.3rem;
+        }
+        .city-name {
+          font-size: 1.8rem;
+        }
+        .temp-large {
+          font-size: 4rem;
+        }
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+        .search-container {
+          margin-left: 0;
+          width: 100%;
+          margin-top: 1rem;
+        }
+        .search-input {
+          flex: 1;
+        }
+        .window-buttons {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .map-container {
+          height: 220px;
+        }
+      }
+      .sunset-info {
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
+        opacity: 0.8;
+      }
+      footer {
+        text-align: center;
+        font-size: 0.7rem;
+        margin-top: 2rem;
+        opacity: 0.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sun-glow"></div>
+    <div class="lens-flare"></div>
+    <div class="dashboard">
+      <div class="mac-window">
+        <div class="window-buttons">
+          <div class="win-btn red"></div>
+          <div class="win-btn yellow"></div>
+          <div class="win-btn green"></div>
+          <div class="search-container">
+            <input
+              type="text"
+              id="citySearch"
+              class="search-input"
+              placeholder="Search any city, country..."
+              value="London"
+            />
+            <button id="searchBtn" class="search-btn">Search</button>
+          </div>
+          <span id="locationStatus" class="location-status"
+            >📍 Live weather + map</span
+          >
+        </div>
+
+        <div
+          id="currentHero"
+          class="current-hero"
+          style="text-align: center; margin-bottom: 2rem"
+        >
+          <div class="location-label" id="locationLabel">MY LOCATION</div>
+          <div class="city-name" id="cityName">—</div>
+          <div class="temp-large" id="mainTemp">—°</div>
+          <div class="condition-text" id="conditionDesc">
+            search for any city
+          </div>
+          <div class="hi-low" id="hiLow">H:—° L:—°</div>
+        </div>
+
+        <div class="glass-card" style="margin-bottom: 2rem">
+          <div class="card-title">HOURLY FORECAST • SUNSET</div>
+          <div id="hourlyContainer" class="hourly-scroll">
+            <div class="loading" style="background: transparent">
+              search a location...
+            </div>
+          </div>
+          <div
+            id="sunsetDisplay"
+            class="sunset-info"
+            style="text-align: right"
+          ></div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="glass-card">
+            <div class="card-title">10-DAY FORECAST</div>
+            <div id="tenDayForecast" class="forecast-10day">
+              search to see forecast
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-title">AIR QUALITY</div>
+            <div id="airQualityBlock">
+              <div class="aqi-value">—</div>
+              <div id="aqiDesc">search for AQI data</div>
+            </div>
+            <div
+              style="margin-top: 1rem; font-size: 0.8rem"
+              id="aqiExtra"
+            ></div>
+          </div>
+
+          <!-- NEW: Live Map Section -->
+          <div class="glass-card">
+            <div class="card-title">📍 LIVE MAP</div>
+            <div id="liveMapContainer" class="map-container">
+              <div class="map-loading">🔍 Search a location to see the map</div>
+            </div>
+            <div
+              style="
+                margin-top: 0.8rem;
+                font-size: 0.75rem;
+                opacity: 0.7;
+                text-align: center;
+              "
+            >
+              Interactive map • Powered by OpenStreetMap
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-title">WIND</div>
+            <div class="wind-gauge">
+              <div class="gauge-circle" id="windGaugeCircle">--</div>
+              <div class="wind-details" id="windDetails">
+                Speed: -- km/h<br />Gusts: --
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-title">PRECIPITATION • FEELS LIKE</div>
+            <div id="precipCard">
+              <div style="font-size: 1.8rem; font-weight: 600" id="precipProb">
+                --%
+              </div>
+              <div>Precipitation probability (today)</div>
+              <div style="margin-top: 0.8rem">
+                <span style="font-weight: 600">Feels like:</span>
+                <span id="feelsLikeTemp">--°</span>
+              </div>
+              <div style="margin-top: 0.4rem">
+                <span style="font-weight: 600">Humidity:</span>
+                <span id="extraMetrics">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer>
+          🌍 Search any city, country, or region • Live weather + interactive
+          map
+        </footer>
+      </div>
+    </div>
+
+    <script>
+      // DOM elements
+      const cityNameEl = document.getElementById("cityName");
+      const mainTempEl = document.getElementById("mainTemp");
+      const conditionDescEl = document.getElementById("conditionDesc");
+      const hiLowEl = document.getElementById("hiLow");
+      const hourlyContainer = document.getElementById("hourlyContainer");
+      const tenDayForecastEl = document.getElementById("tenDayForecast");
+      const airQualityBlock = document.getElementById("airQualityBlock");
+      const aqiDescSpan = document.getElementById("aqiDesc");
+      const aqiExtraSpan = document.getElementById("aqiExtra");
+      const windGaugeCircle = document.getElementById("windGaugeCircle");
+      const windDetailsSpan = document.getElementById("windDetails");
+      const precipProbSpan = document.getElementById("precipProb");
+      const feelsLikeTempSpan = document.getElementById("feelsLikeTemp");
+      const extraMetricsSpan = document.getElementById("extraMetrics");
+      const sunsetDisplaySpan = document.getElementById("sunsetDisplay");
+      const locationStatusSpan = document.getElementById("locationStatus");
+      const searchInput = document.getElementById("citySearch");
+      const searchBtn = document.getElementById("searchBtn");
+      const liveMapContainer = document.getElementById("liveMapContainer");
+
+      // Store current coordinates for map updates
+      let currentMapLat = null;
+      let currentMapLon = null;
+      let currentLocationName = "";
+
+      // Update the embedded map
+      function updateMap(lat, lon, locationName) {
+        currentMapLat = lat;
+        currentMapLon = lon;
+        currentLocationName = locationName;
+
+        // Using OpenStreetMap's static map viewer with Leaflet (embedded iframe)
+        // This shows an interactive map centered on the location
+        const mapHtml = `
+            <iframe 
+                src="https://www.openstreetmap.org/export/embed.html?bbox=${lon - 0.5}%2C${lat - 0.3}%2C${lon + 0.5}%2C${lat + 0.3}&layer=mapnik&marker=${lat}%2C${lon}"
+                style="border: 0; width: 100%; height: 100%;"
+                allowfullscreen>
+            </iframe>
+        `;
+        liveMapContainer.innerHTML = mapHtml;
+      }
+
+      // Helper: Map WMO codes to icon & label
+      function getWeatherIconAndLabel(code) {
+        const codes = {
+          0: ["☀️", "Clear sky"],
+          1: ["🌤️", "Mainly clear"],
+          2: ["⛅", "Partly cloudy"],
+          3: ["☁️", "Overcast"],
+          45: ["🌫️", "Fog"],
+          48: ["🌫️", "Fog"],
+          51: ["🌧️", "Light drizzle"],
+          53: ["🌧️", "Moderate drizzle"],
+          55: ["🌧️", "Dense drizzle"],
+          56: ["🌨️", "Freezing drizzle"],
+          57: ["🌨️", "Freezing drizzle"],
+          61: ["🌦️", "Light rain"],
+          63: ["🌧️", "Moderate rain"],
+          65: ["🌧️", "Heavy rain"],
+          66: ["🌨️", "Freezing rain"],
+          67: ["🌨️", "Freezing rain"],
+          71: ["❄️", "Light snow"],
+          73: ["❄️", "Moderate snow"],
+          75: ["❄️", "Heavy snow"],
+          77: ["🌨️", "Snow grains"],
+          80: ["☔", "Light showers"],
+          81: ["☔", "Moderate showers"],
+          82: ["☔", "Heavy showers"],
+          85: ["🌨️", "Snow showers"],
+          86: ["🌨️", "Snow showers"],
+          95: ["⛈️", "Thunderstorm"],
+          96: ["⛈️", "Thunderstorm"],
+          99: ["⛈️", "Thunderstorm"],
+        };
+        const match = codes[code] || ["🌡️", "Variable"];
+        return { icon: match[0], label: match[1] };
+      }
+
+      // Geocoding: search any location name → coordinates
+      async function searchLocation(query) {
+        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
+        const response = await fetch(geoUrl);
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          const result = data.results[0];
+          return {
+            lat: result.latitude,
+            lon: result.longitude,
+            name: result.name,
+            country: result.country,
+            admin1: result.admin1,
+          };
+        }
+        return null;
+      }
+
+      // Fetch weather data from Open-Meteo
+      async function fetchWeatherData(lat, lon) {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode,precipitation_probability,apparent_temperature,relativehumidity_2m&daily=weathercode,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&timezone=auto&forecast_days=10`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Weather API error");
+        const data = await res.json();
+        return data;
+      }
+
+      // Fetch Air Quality
+      async function fetchAirQuality(lat, lon) {
+        try {
+          const aqUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,european_aqi&timezone=auto`;
+          const aqRes = await fetch(aqUrl);
+          if (!aqRes.ok) return null;
+          return await aqRes.json();
+        } catch (e) {
+          console.warn("Air quality not available", e);
+          return null;
+        }
+      }
+
+      // Main render function for any location
+      async function renderWeatherForLocation(
+        lat,
+        lon,
+        locationName,
+        countryName = "",
+      ) {
+        // Show loading state
+        locationStatusSpan.innerHTML = "⏳ Loading live weather...";
+        mainTempEl.innerText = "—°";
+        conditionDescEl.innerText = "fetching data...";
+        hourlyContainer.innerHTML =
+          '<div class="loading">loading forecast...</div>';
+        tenDayForecastEl.innerHTML =
+          '<div class="loading">loading 10-day...</div>';
+
+        // Update map immediately with coordinates
+        updateMap(lat, lon, locationName);
+
+        try {
+          const weather = await fetchWeatherData(lat, lon);
+          const aqData = await fetchAirQuality(lat, lon);
+
+          const displayName = countryName
+            ? `${locationName}, ${countryName}`
+            : locationName;
+          cityNameEl.innerText = displayName;
+          locationStatusSpan.innerHTML = `✅ Live: ${displayName}`;
+
+          // Current weather
+          const current = weather.current_weather;
+          const temperature = current.temperature;
+          const weatherCode = current.weathercode;
+          const { icon, label } = getWeatherIconAndLabel(weatherCode);
+          conditionDescEl.innerHTML = `${icon} ${label}`;
+          mainTempEl.innerText = `${Math.round(temperature)}°`;
+
+          // Daily hi/low
+          const daily = weather.daily;
+          const todayMax = daily.temperature_2m_max[0];
+          const todayMin = daily.temperature_2m_min[0];
+          hiLowEl.innerText = `H:${Math.round(todayMax)}°  L:${Math.round(todayMin)}°`;
+
+          // Hourly forecast (next 24 hours)
+          const hourly = weather.hourly;
+          const times = hourly.time.slice(0, 24);
+          const temps = hourly.temperature_2m.slice(0, 24);
+          const codesHourly = hourly.weathercode.slice(0, 24);
+          const precipProbHourly = hourly.precipitation_probability
+            ? hourly.precipitation_probability.slice(0, 24)
+            : [];
+
+          let hourlyHtml = "";
+          for (let i = 0; i < times.length; i++) {
+            const hourDate = new Date(times[i]);
+            let hourStr = hourDate.getHours() + ":00";
+            if (hourDate.getHours() === 0) hourStr = "00:00";
+            const tempVal = Math.round(temps[i]);
+            const codeIcon = getWeatherIconAndLabel(codesHourly[i]).icon;
+            hourlyHtml += `
+                    <div class="hourly-item">
+                        <div class="hourly-time">${hourStr}</div>
+                        <div class="hourly-icon">${codeIcon}</div>
+                        <div class="hourly-temp">${tempVal}°</div>
+                        ${precipProbHourly[i] ? `<div style="font-size:0.7rem;">💧${precipProbHourly[i]}%</div>` : ""}
+                    </div>
+                `;
+          }
+          hourlyContainer.innerHTML = hourlyHtml;
+
+          // Sunrise/Sunset
+          if (daily.sunset && daily.sunrise) {
+            const sunsetTime = new Date(daily.sunset[0]).toLocaleTimeString(
+              [],
+              { hour: "2-digit", minute: "2-digit" },
+            );
+            const sunriseTime = new Date(daily.sunrise[0]).toLocaleTimeString(
+              [],
+              { hour: "2-digit", minute: "2-digit" },
+            );
+            sunsetDisplaySpan.innerHTML = `🌅 Sunrise ${sunriseTime} • 🌇 Sunset ${sunsetTime}`;
+          } else {
+            sunsetDisplaySpan.innerHTML = "";
+          }
+
+          // 10-day forecast
+          let forecastHtml = "";
+          for (let i = 0; i < daily.time.length && i < 10; i++) {
+            const date = new Date(daily.time[i]);
+            const weekday = date.toLocaleDateString(undefined, {
+              weekday: "short",
+            });
+            const maxTemp = Math.round(daily.temperature_2m_max[i]);
+            const minTemp = Math.round(daily.temperature_2m_min[i]);
+            const dayIcon = getWeatherIconAndLabel(daily.weathercode[i]).icon;
+            forecastHtml += `
+                    <div class="day-row">
+                        <span class="day-name">${i === 0 ? "Today" : weekday}</span>
+                        <span class="day-icon">${dayIcon}</span>
+                        <div class="day-temps"><span>${maxTemp}°</span> <span style="opacity:0.7;">${minTemp}°</span></div>
+                    </div>
+                `;
+          }
+          tenDayForecastEl.innerHTML = forecastHtml;
+
+          // Wind gauge
+          const windSpeedKmh = current.windspeed;
+          const maxWindRef = 60;
+          let percentage = Math.min(100, (windSpeedKmh / maxWindRef) * 100);
+          const gaugeDeg = (percentage / 100) * 360;
+          windGaugeCircle.style.background = `conic-gradient(#3b82f6 0deg ${gaugeDeg}deg, rgba(255,255,245,0.6) ${gaugeDeg}deg 360deg)`;
+          windGaugeCircle.innerHTML = `${Math.round(windSpeedKmh)}<span style="font-size:0.8rem;">km/h</span>`;
+          windDetailsSpan.innerHTML = `Speed: ${Math.round(windSpeedKmh)} km/h<br>Gusts: ${current.windgusts ? Math.round(current.windgusts) : Math.round(windSpeedKmh + 5)} km/h`;
+
+          // Precipitation probability
+          const todayPrecip = daily.precipitation_probability_max
+            ? daily.precipitation_probability_max[0]
+            : 0;
+          precipProbSpan.innerText = todayPrecip ? `${todayPrecip}%` : "—%";
+
+          // Feels like & humidity
+          const apparentHourly = hourly.apparent_temperature;
+          let feelsLikeVal = current.temperature;
+          if (apparentHourly && apparentHourly.length > 0) {
+            const nowHour = new Date().getHours();
+            const idx = Math.min(apparentHourly.length - 1, nowHour);
+            feelsLikeVal = apparentHourly[idx] || current.temperature;
+          }
+          feelsLikeTempSpan.innerText = `${Math.round(feelsLikeVal)}°`;
+
+          // Humidity from hourly
+          if (
+            hourly.relativehumidity_2m &&
+            hourly.relativehumidity_2m.length > 0
+          ) {
+            extraMetricsSpan.innerText = `${hourly.relativehumidity_2m[0]}%`;
+          } else {
+            extraMetricsSpan.innerText = "—";
+          }
+
+          // Air Quality
+          if (aqData && aqData.current) {
+            let aqiValue = aqData.current.us_aqi || aqData.current.european_aqi;
+            if (aqiValue !== undefined && aqiValue !== null) {
+              let aqiText = "";
+              if (aqiValue <= 50) aqiText = "Good";
+              else if (aqiValue <= 100) aqiText = "Moderate";
+              else if (aqiValue <= 150) aqiText = "Unhealthy for sensitive";
+              else aqiText = "Unhealthy";
+              airQualityBlock.innerHTML = `<div class="aqi-value">${aqiValue}</div><div id="aqiDesc">${aqiText}</div>`;
+              aqiExtraSpan.innerText = `US AQI · ${aqiValue}`;
+            } else {
+              airQualityBlock.innerHTML = `<div class="aqi-value">—</div><div id="aqiDesc">Data unavailable</div>`;
+            }
+          } else {
+            airQualityBlock.innerHTML = `<div class="aqi-value">—</div><div id="aqiDesc">AQI not available</div><div style="font-size:0.7rem;">for this region</div>`;
+          }
+        } catch (err) {
+          console.error(err);
+          locationStatusSpan.innerHTML = "❌ Error loading weather";
+          conditionDescEl.innerText = "⚠️ Could not fetch data";
+          hourlyContainer.innerHTML = `<div class="error-msg">Failed to fetch weather. Check connection or try another city.</div>`;
+          tenDayForecastEl.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
+        }
+      }
+
+      // Search handler
+      async function handleSearch() {
+        const query = searchInput.value.trim();
+        if (!query) {
+          locationStatusSpan.innerHTML =
+            "⚠️ Please enter a city or country name";
+          return;
+        }
+
+        locationStatusSpan.innerHTML = `🔍 Searching for "${query}"...`;
+
+        try {
+          const location = await searchLocation(query);
+          if (!location) {
+            locationStatusSpan.innerHTML = `❌ No results found for "${query}"`;
+            conditionDescEl.innerText = "Location not found";
+            liveMapContainer.innerHTML =
+              '<div class="map-loading">📍 Location not found</div>';
+            return;
+          }
+
+          // Update search input with full name
+          const fullName = location.admin1
+            ? `${location.name}, ${location.admin1}`
+            : location.name;
+          searchInput.value = fullName;
+
+          // Render weather for found location
+          await renderWeatherForLocation(
+            location.lat,
+            location.lon,
+            location.name,
+            location.country,
+          );
+        } catch (err) {
+          console.error(err);
+          locationStatusSpan.innerHTML = "❌ Search failed";
+          conditionDescEl.innerText = "Search error";
+        }
+      }
+
+      // Event listeners
+      searchBtn.addEventListener("click", handleSearch);
+      searchInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") handleSearch();
+      });
+
+      // Default: Load London on startup
+      async function initDefault() {
+        const defaultLocation = await searchLocation("London");
+        if (defaultLocation) {
+          await renderWeatherForLocation(
+            defaultLocation.lat,
+            defaultLocation.lon,
+            defaultLocation.name,
+            defaultLocation.country,
+          );
+        } else {
+          locationStatusSpan.innerHTML = "📍 Default: London (live)";
+          await renderWeatherForLocation(
+            51.5074,
+            -0.1278,
+            "London",
+            "United Kingdom",
+          );
+        }
+      }
+
+      initDefault();
+    </script>
+  </body>
+</html>
